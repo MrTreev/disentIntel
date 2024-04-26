@@ -82,6 +82,7 @@ class Inferencer(object):
         f0_rapt = sptk.rapt(
             wav.astype(np.float32) * 32768, sr, 256, min=lo, max=hi, otype=2
         )
+        print(f0_rapt.shape)
         index_nonzero = f0_rapt != -1e10
         mean_f0, std_f0 = np.mean(f0_rapt[index_nonzero]), np.std(
             f0_rapt[index_nonzero]

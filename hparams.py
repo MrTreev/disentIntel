@@ -44,6 +44,7 @@ hparams = HParams(
     uaspeech_custom_3_data_dir=f"{base_dir}/UASPEECH_Custom_3",
     uaspeech_custom_3_audio_dir=f"{base_dir}/UASPEECH_Custom_3/audio",
     uaspeech_custom_3_inference_dir=f"{base_dir}/UASPEECH_Custom_3/inference",
+    weights="assets/weights/en/805000-G.ckpt",
     batch_size=16,
     mode="train",
     shuffle=True,

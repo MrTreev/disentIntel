@@ -57,6 +57,7 @@ def create_UASpeech_custom_v2():
                 target_path = os.path.join(hparams.uaspeech_sagi_audio_dir, dir, target)
                 if not os.path.exists(target_path):
                     # can happen that the initial mic doesnt exist
+                    print(f'Does not exist: {target_path}')
                     while not os.path.exists(target_path):
                         mic = np.random.randint(2, 9)
                         target = speaker + "_" + word + "_M" + str(mic) + ".wav"
@@ -78,7 +79,7 @@ def create_UASpeech_custom_v2():
                                 target_path = os.path.join(
                                     hparams.uaspeech_sagi_audio_dir, dir, target
                                 )
-                # print(f'Found a valid file: {target_path}')
+                print(f'Found a valid file: {target_path}')
                 valid_files.append(target_path)
                 break
         print("setting results")
@@ -187,7 +188,7 @@ def inference():
     3) Inference with SpeechSplit to save 3 codes per utterance
     """
 
-    weights = "assets/weights/en/805000-G.ckpt"
+    weights = hparams.weights
     spk_emb_dim = 14212
     infer = Inferencer(weights)
     _, dirs, _ = next(os.walk(hparams.uaspeech_custom_3_audio_dir))
@@ -1035,9 +1036,9 @@ def plot_everything(plot_dir):
 if __name__ == "__main__":
     # ~ Correlation testing (perform functions below in the listed order)
     # 1) prepare a custom UASpeech corpus, that will be used in all the following steps
-    create_UASpeech_custom_v2()
+    # create_UASpeech_custom_v2()
     # 2) cut 15% of the audio durations at the beginning and end, then perform VAD
-    cut_vad(0.15, 0.0)
+    # cut_vad(0.15, 0.0)
     # 3) perform inference with the previously trained SpeechSplit model
     inference()
     # 4) to test across the 4 available reference speaker pairs
