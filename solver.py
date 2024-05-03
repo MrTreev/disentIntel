@@ -9,7 +9,7 @@ import time
 import torch
 import torch.nn.functional as F
 from assets.autovc.synthesis import build_model, wavegen
-from curtsies.fmtfuncs import red, green
+from curtsies.fmtfuncs import red
 from model import Generator_3 as Generator
 from model import InterpLnr
 from utils import pad_seq_to_2, quantize_f0_torch, quantize_f0_numpy
@@ -215,8 +215,7 @@ class Solver(object):
                 with torch.no_grad():
                     loss_val = []
                     # select X randomly chosen validation files
-                    print(type(validation_pt))
-                    validation_set = random.choice(list(validation_pt), 100)
+                    validation_set = random.choices(list(validation_pt), k=100)
                     for val_sub in validation_set:
                         emb_org_val = torch.from_numpy(val_sub[1]).to(self.device)
                         for k in range(2, 3):
@@ -246,190 +245,190 @@ class Solver(object):
                     self.writer.add_scalar("Validation_loss", val_loss, i + 1)
 
             # plot val samples
-            if (i + 1) % self.sample_step == 0:
-                print("Generating plot files ...")
-                self.G = self.G.eval()
-                with torch.no_grad():
-                    maxPlotCount = 3
-                    for val_sub in validation_set[0:maxPlotCount]:
-                        speaker = val_sub[0]
-                        speaker_fig_sample_dir = os.path.join(
-                            self.sample_dir, speaker, "fig"
-                        )
-                        if not os.path.exists(speaker_fig_sample_dir):
-                            os.makedirs(speaker_fig_sample_dir)
+            # if (i + 1) % self.sample_step == 0:
+            #     print("Generating plot files ...")
+            #     self.G = self.G.eval()
+            #     with torch.no_grad():
+            #         maxPlotCount = 3
+            #         for val_sub in validation_set[0:maxPlotCount]:
+            #             speaker = val_sub[0]
+            #             speaker_fig_sample_dir = os.path.join(
+            #                 self.sample_dir, speaker, "fig"
+            #             )
+            #             if not os.path.exists(speaker_fig_sample_dir):
+            #                 os.makedirs(speaker_fig_sample_dir)
 
-                        emb_org_val = torch.from_numpy(val_sub[1]).to(self.device)
-                        for k in range(2, 3):
-                            x_real_pad, _ = pad_seq_to_2(
-                                val_sub[k][0][np.newaxis, :, :], 576
-                            )
-                            len_org = torch.tensor([val_sub[k][2]]).to(self.device)
-                            f0_org = np.pad(
-                                val_sub[k][1],
-                                (0, 576 - val_sub[k][2]),
-                                "constant",
-                                constant_values=(0, 0),
-                            )
-                            f0_quantized = quantize_f0_numpy(f0_org)[0]
-                            f0_onehot = f0_quantized[np.newaxis, :, :]
-                            f0_org_val = torch.from_numpy(f0_onehot).to(self.device)
-                            x_real_pad = torch.from_numpy(x_real_pad).to(self.device)
-                            x_f0 = torch.cat((x_real_pad, f0_org_val), dim=-1)
-                            x_f0_F = torch.cat(
-                                (x_real_pad, torch.zeros_like(f0_org_val)), dim=-1
-                            )
-                            x_f0_C = torch.cat(
-                                (torch.zeros_like(x_real_pad), f0_org_val), dim=-1
-                            )
+            #             emb_org_val = torch.from_numpy(val_sub[1]).to(self.device)
+            #             for k in range(2, 3):
+            #                 x_real_pad, _ = pad_seq_to_2(
+            #                     val_sub[k][0][np.newaxis, :, :], 576
+            #                 )
+            #                 len_org = torch.tensor([val_sub[k][2]]).to(self.device)
+            #                 f0_org = np.pad(
+            #                     val_sub[k][1],
+            #                     (0, 576 - val_sub[k][2]),
+            #                     "constant",
+            #                     constant_values=(0, 0),
+            #                 )
+            #                 f0_quantized = quantize_f0_numpy(f0_org)[0]
+            #                 f0_onehot = f0_quantized[np.newaxis, :, :]
+            #                 f0_org_val = torch.from_numpy(f0_onehot).to(self.device)
+            #                 x_real_pad = torch.from_numpy(x_real_pad).to(self.device)
+            #                 x_f0 = torch.cat((x_real_pad, f0_org_val), dim=-1)
+            #                 x_f0_F = torch.cat(
+            #                     (x_real_pad, torch.zeros_like(f0_org_val)), dim=-1
+            #                 )
+            #                 x_f0_C = torch.cat(
+            #                     (torch.zeros_like(x_real_pad), f0_org_val), dim=-1
+            #                 )
 
-                            x_identic_val = self.G(x_f0, x_real_pad, emb_org_val)
-                            x_identic_woF = self.G(x_f0_F, x_real_pad, emb_org_val)
-                            x_identic_woR = self.G(
-                                x_f0, torch.zeros_like(x_real_pad), emb_org_val
-                            )
-                            x_identic_woC = self.G(x_f0_C, x_real_pad, emb_org_val)
-                            x_identic_woT = self.G(
-                                x_f0, x_real_pad, torch.zeros_like(emb_org_val)
-                            )
+            #                 x_identic_val = self.G(x_f0, x_real_pad, emb_org_val)
+            #                 x_identic_woF = self.G(x_f0_F, x_real_pad, emb_org_val)
+            #                 x_identic_woR = self.G(
+            #                     x_f0, torch.zeros_like(x_real_pad), emb_org_val
+            #                 )
+            #                 x_identic_woC = self.G(x_f0_C, x_real_pad, emb_org_val)
+            #                 x_identic_woT = self.G(
+            #                     x_f0, x_real_pad, torch.zeros_like(emb_org_val)
+            #                 )
 
-                            melsp_gd_pad = x_real_pad[0].cpu().numpy().T
-                            melsp_gd_pad = melsp_gd_pad[:len_org]
-                            melsp_out = x_identic_val[0].cpu().numpy().T
-                            melsp_woF = x_identic_woF[0].cpu().numpy().T
-                            melsp_woR = x_identic_woR[0].cpu().numpy().T
-                            melsp_woC = x_identic_woC[0].cpu().numpy().T
-                            melsp_woT = x_identic_woT[0].cpu().numpy().T
+            #                 melsp_gd_pad = x_real_pad[0].cpu().numpy().T
+            #                 melsp_gd_pad = melsp_gd_pad[:len_org]
+            #                 melsp_out = x_identic_val[0].cpu().numpy().T
+            #                 melsp_woF = x_identic_woF[0].cpu().numpy().T
+            #                 melsp_woR = x_identic_woR[0].cpu().numpy().T
+            #                 melsp_woC = x_identic_woC[0].cpu().numpy().T
+            #                 melsp_woT = x_identic_woT[0].cpu().numpy().T
 
-                            min_value = np.min(
-                                np.hstack(
-                                    [
-                                        melsp_gd_pad,
-                                        melsp_out,
-                                        melsp_woF,
-                                        melsp_woR,
-                                        melsp_woC,
-                                    ]
-                                )
-                            )
-                            max_value = np.max(
-                                np.hstack(
-                                    [
-                                        melsp_gd_pad,
-                                        melsp_out,
-                                        melsp_woF,
-                                        melsp_woR,
-                                        melsp_woC,
-                                    ]
-                                )
-                            )
+            #                 min_value = np.min(
+            #                     np.hstack(
+            #                         [
+            #                             melsp_gd_pad,
+            #                             melsp_out,
+            #                             melsp_woF,
+            #                             melsp_woR,
+            #                             melsp_woC,
+            #                         ]
+            #                     )
+            #                 )
+            #                 max_value = np.max(
+            #                     np.hstack(
+            #                         [
+            #                             melsp_gd_pad,
+            #                             melsp_out,
+            #                             melsp_woF,
+            #                             melsp_woR,
+            #                             melsp_woC,
+            #                         ]
+            #                     )
+            #                 )
 
-                            fig, (ax1, ax2, ax3, ax4, ax5, ax6) = plt.subplots(
-                                6, 1, sharex=True, constrained_layout=True
-                            )
-                            im1 = ax1.imshow(
-                                melsp_gd_pad,
-                                aspect="auto",
-                                vmin=min_value,
-                                vmax=max_value,
-                            )
-                            ax1.set_title("source")
-                            im2 = ax2.imshow(
-                                melsp_out, aspect="auto", vmin=min_value, vmax=max_value
-                            )
-                            ax2.set_title("output complete")
-                            im3 = ax3.imshow(
-                                melsp_woC, aspect="auto", vmin=min_value, vmax=max_value
-                            )
-                            ax3.set_title("output without Content")
-                            im4 = ax4.imshow(
-                                melsp_woR, aspect="auto", vmin=min_value, vmax=max_value
-                            )
-                            ax4.set_title("output without Rythm")
-                            im5 = ax5.imshow(
-                                melsp_woF, aspect="auto", vmin=min_value, vmax=max_value
-                            )
-                            ax5.set_title("output without Pitch")
-                            im6 = ax6.imshow(
-                                melsp_woT, aspect="auto", vmin=min_value, vmax=max_value
-                            )
-                            ax6.set_title("output without Timbre")
-                            plt.savefig(
-                                f"{speaker_fig_sample_dir}/{i+1}_{val_sub[0]}_{k}.png",
-                                dpi=600,
-                            )
-                            plt.close(fig)
+            #                 fig, (ax1, ax2, ax3, ax4, ax5, ax6) = plt.subplots(
+            #                     6, 1, sharex=True, constrained_layout=True
+            #                 )
+            #                 im1 = ax1.imshow(
+            #                     melsp_gd_pad,
+            #                     aspect="auto",
+            #                     vmin=min_value,
+            #                     vmax=max_value,
+            #                 )
+            #                 ax1.set_title("source")
+            #                 im2 = ax2.imshow(
+            #                     melsp_out, aspect="auto", vmin=min_value, vmax=max_value
+            #                 )
+            #                 ax2.set_title("output complete")
+            #                 im3 = ax3.imshow(
+            #                     melsp_woC, aspect="auto", vmin=min_value, vmax=max_value
+            #                 )
+            #                 ax3.set_title("output without Content")
+            #                 im4 = ax4.imshow(
+            #                     melsp_woR, aspect="auto", vmin=min_value, vmax=max_value
+            #                 )
+            #                 ax4.set_title("output without Rythm")
+            #                 im5 = ax5.imshow(
+            #                     melsp_woF, aspect="auto", vmin=min_value, vmax=max_value
+            #                 )
+            #                 ax5.set_title("output without Pitch")
+            #                 im6 = ax6.imshow(
+            #                     melsp_woT, aspect="auto", vmin=min_value, vmax=max_value
+            #                 )
+            #                 ax6.set_title("output without Timbre")
+            #                 plt.savefig(
+            #                     f"{speaker_fig_sample_dir}/{i+1}_{val_sub[0]}_{k}.png",
+            #                     dpi=600,
+            #                 )
+            #                 plt.close(fig)
 
             # save mspecs, to be converted to a wav
-            if (i + 1) % self.audio_step == 0:
-                print("Generating .wav files ...")
-                self.G = self.G.eval()
-                with torch.no_grad():
-                    maxAudioCount = 4
-                    for val_sub in validation_pt[0:maxAudioCount]:
-                        speaker = val_sub[0]
-                        speaker_audio_sample_dir = os.path.join(
-                            self.sample_dir, speaker, "audio"
-                        )
-                        if not os.path.exists(speaker_audio_sample_dir):
-                            os.makedirs(speaker_audio_sample_dir)
+            # if (i + 1) % self.audio_step == 0:
+            #     print("Generating .wav files ...")
+            #     self.G = self.G.eval()
+            #     with torch.no_grad():
+            #         maxAudioCount = 4
+            #         for val_sub in validation_pt[0:maxAudioCount]:
+            #             speaker = val_sub[0]
+            #             speaker_audio_sample_dir = os.path.join(
+            #                 self.sample_dir, speaker, "audio"
+            #             )
+            #             if not os.path.exists(speaker_audio_sample_dir):
+            #                 os.makedirs(speaker_audio_sample_dir)
 
-                        emb_org_val = torch.from_numpy(val_sub[1]).to(self.device)
-                        for k in range(2, 3):
-                            x_real_pad, _ = pad_seq_to_2(
-                                val_sub[k][0][np.newaxis, :, :], 576
-                            )
-                            len_org = torch.tensor([val_sub[k][2]]).to(self.device)
-                            f0_org = np.pad(
-                                val_sub[k][1],
-                                (0, 576 - val_sub[k][2]),
-                                "constant",
-                                constant_values=(0, 0),
-                            )
-                            f0_quantized = quantize_f0_numpy(f0_org)[0]
-                            f0_onehot = f0_quantized[np.newaxis, :, :]
-                            f0_org_val = torch.from_numpy(f0_onehot).to(self.device)
-                            x_real_pad = torch.from_numpy(x_real_pad).to(self.device)
-                            x_f0 = torch.cat((x_real_pad, f0_org_val), dim=-1)
-                            x_f0_F = torch.cat(
-                                (x_real_pad, torch.zeros_like(f0_org_val)), dim=-1
-                            )
-                            x_f0_C = torch.cat(
-                                (torch.zeros_like(x_real_pad), f0_org_val), dim=-1
-                            )
+            #             emb_org_val = torch.from_numpy(val_sub[1]).to(self.device)
+            #             for k in range(2, 3):
+            #                 x_real_pad, _ = pad_seq_to_2(
+            #                     val_sub[k][0][np.newaxis, :, :], 576
+            #                 )
+            #                 len_org = torch.tensor([val_sub[k][2]]).to(self.device)
+            #                 f0_org = np.pad(
+            #                     val_sub[k][1],
+            #                     (0, 576 - val_sub[k][2]),
+            #                     "constant",
+            #                     constant_values=(0, 0),
+            #                 )
+            #                 f0_quantized = quantize_f0_numpy(f0_org)[0]
+            #                 f0_onehot = f0_quantized[np.newaxis, :, :]
+            #                 f0_org_val = torch.from_numpy(f0_onehot).to(self.device)
+            #                 x_real_pad = torch.from_numpy(x_real_pad).to(self.device)
+            #                 x_f0 = torch.cat((x_real_pad, f0_org_val), dim=-1)
+            #                 x_f0_F = torch.cat(
+            #                     (x_real_pad, torch.zeros_like(f0_org_val)), dim=-1
+            #                 )
+            #                 x_f0_C = torch.cat(
+            #                     (torch.zeros_like(x_real_pad), f0_org_val), dim=-1
+            #                 )
 
-                            x_identic_val = self.G(x_f0, x_real_pad, emb_org_val)
-                            x_identic_woF = self.G(x_f0_F, x_real_pad, emb_org_val)
-                            x_identic_woR = self.G(
-                                x_f0, torch.zeros_like(x_real_pad), emb_org_val
-                            )
-                            x_identic_woC = self.G(x_f0_C, x_real_pad, emb_org_val)
-                            x_identic_woT = self.G(
-                                x_f0, x_real_pad, torch.zeros_like(emb_org_val)
-                            )
+            #                 x_identic_val = self.G(x_f0, x_real_pad, emb_org_val)
+            #                 x_identic_woF = self.G(x_f0_F, x_real_pad, emb_org_val)
+            #                 x_identic_woR = self.G(
+            #                     x_f0, torch.zeros_like(x_real_pad), emb_org_val
+            #                 )
+            #                 x_identic_woC = self.G(x_f0_C, x_real_pad, emb_org_val)
+            #                 x_identic_woT = self.G(
+            #                     x_f0, x_real_pad, torch.zeros_like(emb_org_val)
+            #                 )
 
-                            # melsp_gd_pad = x_real_pad[0].cpu().numpy()
-                            melsp_out = (
-                                x_identic_val[0].cpu().numpy()
-                            )  # this is the one to convert to audio
-                            # melsp_woF = x_identic_woF[0].cpu().numpy()
-                            # melsp_woR = x_identic_woR[0].cpu().numpy()
-                            # melsp_woC = x_identic_woC[0].cpu().numpy()
-                            # melsp_woT = x_identic_woT[0].cpu().numpy()
+            #                 # melsp_gd_pad = x_real_pad[0].cpu().numpy()
+            #                 melsp_out = (
+            #                     x_identic_val[0].cpu().numpy()
+            #                 )  # this is the one to convert to audio
+            #                 # melsp_woF = x_identic_woF[0].cpu().numpy()
+            #                 # melsp_woR = x_identic_woR[0].cpu().numpy()
+            #                 # melsp_woC = x_identic_woC[0].cpu().numpy()
+            #                 # melsp_woT = x_identic_woT[0].cpu().numpy()
 
-                            # load pretraind vocoder from AutoVC
-                            device = torch.device("cuda:0")
-                            model = build_model().to(device)
-                            checkpoint = torch.load(
-                                "assets/checkpoint_step001000000_ema.pth",
-                                map_location=torch.device(torch.device(device)),
-                            )
-                            model.load_state_dict(checkpoint["state_dict"])
+            #                 # load pretraind vocoder from AutoVC
+            #                 device = torch.device("cuda:0")
+            #                 model = build_model().to(device)
+            #                 checkpoint = torch.load(
+            #                     "assets/checkpoint_step001000000_ema.pth",
+            #                     map_location=torch.device(torch.device(device)),
+            #                 )
+            #                 model.load_state_dict(checkpoint["state_dict"])
 
-                            # convert output spect to wav (including padding)
-                            waveform = wavegen(model, c=melsp_out)
-                            soundfile.write(
-                                f"{speaker_audio_sample_dir}/{i+1}_{val_sub[0]}_{k}.wav",
-                                waveform,
-                                samplerate=16000,
-                            )
+            #                 # convert output spect to wav (including padding)
+            #                 waveform = wavegen(model, c=melsp_out)
+            #                 soundfile.write(
+            #                     f"{speaker_audio_sample_dir}/{i+1}_{val_sub[0]}_{k}.wav",
+            #                     waveform,
+            #                     samplerate=16000,
+            #                 )

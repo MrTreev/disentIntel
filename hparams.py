@@ -3,8 +3,8 @@ from tfcompat.hparam import HParams
 # NOTE: If you want full control for model architecture. please take a look
 # at the code and change whatever you want. Some hyper parameters are hardcoded
 
-base_dir = "/mnt/datasets/processed/disentIntel"
-out_dir = "/home/opatterson/Repos/University/01-Other-Workspace/disentIntel/out"
+dataset_base_dir = "/mnt/datasets/processed/disentIntel"
+out_dir = "out"
 
 # Default hyperparameters:
 hparams = HParams(
@@ -34,17 +34,17 @@ hparams = HParams(
     max_len_pad=1024,               # 192 (original), 672 (de), 576 (en)
                                     # has to be: % 32 == 0
     # data loader
-    common_data_dir=f"{base_dir}/CommonSpeakerSplit/en",
-    common_speaker_dir=f"{base_dir}/CommonSpeakerSplit/en/speaker",
-    common_root_dir=f"{base_dir}/CommonSpeakerSplit/en/spmel",
-    common_feat_dir=f"{base_dir}/CommonSpeakerSplit/en/raptf0",
-    uaspeech_sagi_data_dir=f"{base_dir}/UASPEECH_SAGI",
-    uaspeech_sagi_audio_dir=f"{base_dir}/UASPEECH_SAGI/audio",
-    uaspeech_sagi_word_file=f"{base_dir}/UASPEECH_SAGI/transcription_lut.csv",
-    uaspeech_custom_3_data_dir=f"{base_dir}/UASPEECH_Custom_3",
-    uaspeech_custom_3_audio_dir=f"{base_dir}/UASPEECH_Custom_3/audio",
-    uaspeech_custom_3_inference_dir=f"{base_dir}/UASPEECH_Custom_3/inference",
-    weights="assets/weights/en/805000-G.ckpt",
+    common_data_dir=f"{dataset_base_dir}/CommonSpeakerSplit",
+    common_speaker_dir=f"{dataset_base_dir}/CommonSpeakerSplit/wavs",
+    common_root_dir=f"{dataset_base_dir}/CommonSpeakerSplit/spmel",
+    common_feat_dir=f"{dataset_base_dir}/CommonSpeakerSplit/raptf0",
+    uaspeech_sagi_data_dir=f"{dataset_base_dir}/UASPEECH_SAGI",
+    uaspeech_sagi_audio_dir=f"{dataset_base_dir}/UASPEECH_SAGI/audio",
+    uaspeech_sagi_word_file=f"{dataset_base_dir}/UASPEECH_SAGI/transcription_lut.csv",
+    uaspeech_custom_3_data_dir=f"{dataset_base_dir}/UASPEECH_Custom_3",
+    uaspeech_custom_3_audio_dir=f"{dataset_base_dir}/UASPEECH_Custom_3/audio",
+    uaspeech_custom_3_inference_dir=f"{dataset_base_dir}/UASPEECH_Custom_3/inference",
+    weights="assets/weights/805000-G.ckpt",
     batch_size=16,
     mode="train",
     shuffle=True,

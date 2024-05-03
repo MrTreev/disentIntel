@@ -25,7 +25,8 @@ for speaker in sorted(subDirList):
 
     # add different data to train and val metadata
     for fileName in sorted(fileList):
-        if "train" in fileName:
+        spnum = fileName[5]
+        if "train" in fileName or spnum == "0":
             # speaker (folder name)
             trainUtterances = []
             trainUtterances.append(speaker)
@@ -36,7 +37,7 @@ for speaker in sorted(subDirList):
             # add file list, and add to final list, which will be written to file train.pkl
             trainUtterances.append(os.path.join(speaker, fileName))
             trainSpeakers.append(trainUtterances)
-        if "val" in fileName:
+        if "val" in fileName or spnum != "0":
             if currentValSpeakerCount >= valFileCountPerSpeaker:
                 continue
             # speaker (folder name)

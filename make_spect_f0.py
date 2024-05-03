@@ -42,6 +42,7 @@ for subdir in sorted(subdirList):
     prng = RandomState(int(subdir[1:]))
     for fileName in sorted(fileList):
         if ".wav" in fileName:
+            print(fileName)
             # read audio file
             x, fs = sf.read(os.path.join(dirName, subdir, fileName))
             assert fs == 16000

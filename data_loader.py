@@ -2,7 +2,6 @@ import os
 import torch
 import pickle
 import numpy as np
-from multiprocessing import Process, Manager
 from torch.utils.data.sampler import Sampler
 
 torch.multiprocessing.set_sharing_strategy("file_system")
@@ -23,21 +22,14 @@ class Utterances(torch.utils.data.Dataset):
         metaname = os.path.join(self.root_dir[:-6], "train.pkl")
         meta = pickle.load(open(metaname, "rb"))
 
-        manager = Manager()
-        meta = manager.list(meta)
-        dataset = manager.list(
+        meta = list(meta)
+        dataset = list(
             len(meta) * [None]
-        )  # <-- can be shared between processes.
-        processes = []
+        )
         for i in range(0, len(meta), self.step):
-            p = Process(
-                target=self.load_data, args=(meta[i : i + self.step], dataset, i, mode)
-            )
-            p.start()
-            processes.append(p)
-        for p in processes:
-            p.join()
+            self.load_data(meta[i : i + self.step], dataset, i, mode)
 
+        dataset = list(dataset)
         # very importtant to do dataset = list(dataset)
         if mode == "train":
             self.train_dataset = list(dataset)
@@ -179,7 +171,7 @@ def get_loader(hparams) -> torch.utils.data.DataLoader:
 
     dataset = Utterances(hparams.common_root_dir, hparams.common_feat_dir, hparams.mode)
     my_collator = MyCollator(hparams)
-    sampler = MultiSampler(len(dataset), hparams.samplier, shuffle=hparams.shuffle)
+    sampler = torch.utils.data.SequentialSampler(dataset)  # MultiSampler(len(dataset), hparams.samplier, shuffle=hparams.shuffle)
     data_loader = torch.utils.data.DataLoader(
         dataset=dataset,
         batch_size=hparams.batch_size,

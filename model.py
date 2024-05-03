@@ -387,7 +387,7 @@ class Generator_3(nn.Module):
 
         mel_outputs = self.decoder(encoder_outputs)
 
-        return mel_outputs, code_exp_1, code_exp_2, code_exp_3
+        return mel_outputs  # , code_exp_1, code_exp_2, code_exp_3
 
     def rhythm(self, x_org):
         x_2 = x_org.transpose(2, 1)

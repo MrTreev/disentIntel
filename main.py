@@ -1,6 +1,7 @@
 import os
 import argparse
 from torch.backends import cudnn
+import torch
 
 from solver import Solver
 from data_loader import get_loader
@@ -28,6 +29,9 @@ def main(config):
 
     # Solver for training
     solver = Solver(vcc_loader, config, hparams)
+    print(f"vcc_loader: {vcc_loader}")
+    iter_loader = iter(vcc_loader)
+    print(len(iter_loader))
 
     solver.train()
 
@@ -67,9 +71,10 @@ if __name__ == "__main__":
         "--sample_step", type=int, default=1000
     )  # set to 1 for debugging on local machine
     parser.add_argument("--model_save_step", type=int, default=1000)
-    parser.add_argument("--audio-step", type=int, default=75000)
+    parser.add_argument("--audio_step", type=int, default=75000)
 
     config = parser.parse_args()
     print(config)
     print(hparams_debug_string())
+    print([torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())])
     main(config)
