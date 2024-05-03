@@ -15,7 +15,7 @@ from assets.py_vad_tool.unsupervised_vad import nrg_vad
 from inferencer import Inferencer
 from librosa.sequence import dtw
 from shutil import copyfile
-from hparams import hparams, base_dir, out_dir
+from hparams import hparams, dataset_base_dir, out_dir
 
 
 def create_UASpeech_custom_v2():
@@ -259,11 +259,11 @@ def scatter_plot_regression():
     )
 
     intelligibility = {}
-    with open(f"{base_dir}/{version}/intelligibility.csv", mode="r") as handle:
+    with open(f"{dataset_base_dir}/{version}/intelligibility.csv", mode="r") as handle:
         reader = csv.reader(handle)
         intelligibility = {rows[0]: rows[1] for rows in reader}
 
-    meta_dir = f"{base_dir}/{version}/{meta}/pathological"
+    meta_dir = f"{dataset_base_dir}/{version}/{meta}/pathological"
     path_speaker_codes = {}
     _, dirs, _ = next(os.walk(meta_dir))
     for dir in sorted(dirs):
@@ -278,7 +278,7 @@ def scatter_plot_regression():
                     codes.append(tmp)
         path_speaker_codes[speaker] = codes
 
-    meta_dir = f"{base_dir}/{version}/{meta}/control"
+    meta_dir = f"{dataset_base_dir}/{version}/{meta}/control"
     control_speaker_codes = {}
     _, dirs, _ = next(os.walk(meta_dir))
     for dir in sorted(dirs):
@@ -432,11 +432,11 @@ def dtw_diff_condense():
     meta_ref_f = "CF02"
     meta_ref_m = "CM08"
     version = "UASPEECH_Custom_3"
-    root_dir = f"{base_dir}/{version}/{meta_dir}"
+    root_dir = f"{dataset_base_dir}/{version}/{meta_dir}"
 
     ref_f, ref_m = dict(), dict()  # order: zc, zf, zr, mspec, mspecOutNoT
-    ref_dir = f"{base_dir}/{version}/meta/reference"
-    ref_dir = f"{base_dir}/{version}/{meta_dir}/reference"
+    ref_dir = f"{dataset_base_dir}/{version}/meta/reference"
+    ref_dir = f"{dataset_base_dir}/{version}/{meta_dir}/reference"
     _, dirs, _ = next(os.walk(ref_dir))
     for dir in sorted(dirs):
         # female reference
@@ -466,8 +466,8 @@ def dtw_diff_condense():
                 ref_m[fid] = tmp
 
     # check if all reference files are also in the other folders (disregarding mic)
-    ref_path_f = base_dir + version + "/" + meta_dir + "/reference/" + meta_ref_f
-    ref_path_m = base_dir + version + "/" + meta_dir + "/reference/" + meta_ref_m
+    ref_path_f = dataset_base_dir + version + "/" + meta_dir + "/reference/" + meta_ref_f
+    ref_path_m = dataset_base_dir + version + "/" + meta_dir + "/reference/" + meta_ref_m
     _, subdirs_m, _ = next(os.walk(ref_path_m))
     _, subdirs_f, _ = next(os.walk(ref_path_f))
 
@@ -744,7 +744,7 @@ def reset_meta_dir():
     """
 
     meta = "meta_0_swapped"
-    root_dir = f"{base_dir}/UASPEECH_Custom/" + meta
+    root_dir = f"{dataset_base_dir}/UASPEECH_Custom/" + meta
 
     _, dirs, _ = next(os.walk(root_dir))
     for dir in sorted(dirs):
@@ -789,11 +789,11 @@ def n_utterances_t_times(n, T):
     )
 
     intelligibility = {}
-    with open(f"{base_dir}/{version}/intelligibility.csv", mode="r") as handle:
+    with open(f"{dataset_base_dir}/{version}/intelligibility.csv", mode="r") as handle:
         reader = csv.reader(handle)
         intelligibility = {rows[0]: rows[1] for rows in reader}
 
-    meta_dir = f"{base_dir}/{version}/{meta}/pathological"
+    meta_dir = f"{dataset_base_dir}/{version}/{meta}/pathological"
     path_speaker_codes = {}
     _, dirs, _ = next(os.walk(meta_dir))
     for dir in sorted(dirs):
@@ -813,7 +813,7 @@ def n_utterances_t_times(n, T):
                         codes.append(tmp)
         path_speaker_codes[speaker] = codes
 
-    meta_dir = f"{base_dir}/{version}/{meta}/control"
+    meta_dir = f"{dataset_base_dir}/{version}/{meta}/control"
     control_speaker_codes = {}
     _, dirs, _ = next(os.walk(meta_dir))
     for dir in sorted(dirs):
