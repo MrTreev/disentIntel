@@ -89,51 +89,82 @@ class MyCollator(object):
 
     def __call__(self, batch):
         # batch[i] is a tuple of __getitem__ outputs
+        # full_melspec:
+        #       melspec of the entire audio file ~15min ?
+        #       probably not but just a preselected segment
+        #       (see other code and try to find it)
+        # speaker_embedding:
+        #       speaker embedding
+        # pitch_contour:
+        #       pitch contour
         new_batch = []
         for token in batch:
             (
-                aa,
-                b,
-                c,
-            ) = token  # aa == melspec of the entire audio file ~15min ? probably not but just a preselected segment (see other code and try to find it), b == speaker embedding, c == pitch contour
+                full_melspec,
+                speaker_embedding,
+                pitch_contour,
+            ) = token
             len_crop = np.random.randint(
-                self.min_len_seq, self.max_len_seq + 1, size=2
-            )  # 1.5s ~ 3s
-            left = np.random.randint(0, len(aa) - len_crop[0], size=2)
-            # pdb.set_trace()
+                # 64-129, two ints
+                # 1.5s ~ 3s
+                self.min_len_seq, self.max_len_seq + 1,
+            )
+            left = np.random.randint(
+                0, len(full_melspec) - len_crop, size=2
+            )
 
-            a = aa[left[0] : left[0] + len_crop[0], :]
-            c = c[left[0] : left[0] + len_crop[0]]
+            cropped_melspec = full_melspec[left : left + len_crop, :]
+            pitch_contour = pitch_contour[left : left + len_crop]
 
-            a = np.clip(a, 0, 1)
+            cropped_melspec = np.clip(cropped_melspec, 0, 1)
 
-            a_pad = np.pad(a, ((0, self.max_len_pad - a.shape[0]), (0, 0)), "constant")
-            c_pad = np.pad(
-                c[:, np.newaxis],
-                ((0, self.max_len_pad - c.shape[0]), (0, 0)),
+            cropped_melspec_padded = np.pad(
+                cropped_melspec,
+                ((0, self.max_len_pad - cropped_melspec.shape[0]), (0, 0)),
+                "constant"
+            )
+            pitch_contour_padded = np.pad(
+                pitch_contour[:, np.newaxis],
+                ((0, self.max_len_pad - pitch_contour.shape[0]), (0, 0)),
                 "constant",
                 constant_values=-1e10,
             )
 
-            new_batch.append((a_pad, b, c_pad, len_crop[0]))
+            new_batch.append((
+                cropped_melspec_padded,
+                speaker_embedding,
+                pitch_contour_padded,
+                len_crop
+            ))
 
         batch = new_batch
 
-        a, b, c, d = zip(
-            *batch
-        )  # all batch-size mels are in a, all batch-size speaker-embeddings are in b, ...
+        (
+            cropped_melspec,
+            speaker_embedding,
+            pitch_contour,
+            crop_length
+        ) = zip(*batch)
+
         melsp = torch.from_numpy(
-            np.stack(a, axis=0)
-        )  # stack along batch-dimension e.g. (16, 192, 80) - (batch-size, 192 16ms frames, 80 frequency bins) ?
+            # Stack along batch-dimension e.g. (16, 192, 80)
+            # (batch-size, 192 16ms frames, 80 frequency bins) ?
+            np.stack(cropped_melspec, axis=0)
+        )
         spk_emb = torch.from_numpy(
-            np.stack(b, axis=0)
-        )  # stack along batch-dimension e.g. (16, 82) - (batch-size, 82 one-hot encoded speaker embedding vector) ?
+            # Stack along batch-dimension e.g. (16, 82)
+            # (batch-size, 82 one-hot encoded speaker embedding vector) ?
+            np.stack(speaker_embedding, axis=0)
+        )
         pitch = torch.from_numpy(
-            np.stack(c, axis=0)
-        )  # stack along batch-dimension e.g. (16, 192, 1) - (batch-size, 192 10ms frames, 1 pitch value)
+            # Stack along batch-dimension e.g. (16, 192, 1)
+            # (batch-size, 192 10ms frames, 1 pitch value)
+            np.stack(pitch_contour, axis=0)
+        )
         len_org = torch.from_numpy(
-            np.stack(d, axis=0)
-        )  # stack along batch-dimension e.g. (16)
+            # stack along batch-dimension e.g. (16)
+            np.stack(crop_length, axis=0)
+        )
 
         return melsp, spk_emb, pitch, len_org
 
@@ -169,9 +200,16 @@ def get_loader(hparams) -> torch.utils.data.DataLoader:
     def worker_init_fn():
         np.random.seed((torch.initial_seed()) % (2**32))
 
-    dataset = Utterances(hparams.common_root_dir, hparams.common_feat_dir, hparams.mode)
+    dataset = Utterances(
+        hparams.common_root_dir, hparams.common_feat_dir, hparams.mode
+    )
     my_collator = MyCollator(hparams)
-    sampler = torch.utils.data.SequentialSampler(dataset)  # MultiSampler(len(dataset), hparams.samplier, shuffle=hparams.shuffle)
+    # sampler = MultiSampler(
+    #     len(dataset),
+    #     hparams.samplier,
+    #     shuffle=hparams.shuffle
+    # )
+    sampler = torch.utils.data.SequentialSampler(dataset)
     data_loader = torch.utils.data.DataLoader(
         dataset=dataset,
         batch_size=hparams.batch_size,
