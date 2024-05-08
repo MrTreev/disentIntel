@@ -372,19 +372,6 @@ class Generator_3(nn.Module):
             dim=-1,
         )  # TODO: when on workstation, add .cuda() to the end
 
-        # print('forward')
-        # print('encoder outputs')
-        # print(encoder_outputs.shape)
-        # print('code_1 -> content')
-        # print(code_exp_1.shape)
-        # print(code_exp_1)
-        # print('code_2 -> rythm')
-        # print(code_exp_2.shape)
-        # print(code_exp_2)
-        # print('code_3 -> frequency')
-        # print(code_exp_3.shape)
-        # print(code_exp_3)
-
         mel_outputs = self.decoder(encoder_outputs)
 
         return mel_outputs  # , code_exp_1, code_exp_2, code_exp_3

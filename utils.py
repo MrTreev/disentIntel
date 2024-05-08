@@ -84,6 +84,5 @@ def pad_f0(f0, len_out=672):
 
 def pad_seq_to_2(x, len_out=1696):
     len_pad = len_out - x.shape[1]
-    print(x.shape[1])
     assert len_pad >= 0
     return np.pad(x, ((0, 0), (0, len_pad), (0, 0)), "constant"), len_pad

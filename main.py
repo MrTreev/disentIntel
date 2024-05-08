@@ -29,9 +29,6 @@ def main(config):
 
     # Solver for training
     solver = Solver(vcc_loader, config, hparams)
-    print(f"vcc_loader: {vcc_loader}")
-    iter_loader = iter(vcc_loader)
-    print(len(iter_loader))
 
     solver.train()
 
