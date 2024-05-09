@@ -6,6 +6,8 @@ import torch
 from solver import Solver
 from data_loader import get_loader
 from hparams import hparams, hparams_debug_string
+global plslog
+plslog = False
 
 
 def str2bool(v):
@@ -64,14 +66,12 @@ if __name__ == "__main__":
 
     # Step size.
     parser.add_argument("--log_step", type=int, default=10)
-    parser.add_argument(
-        "--sample_step", type=int, default=1000
-    )  # set to 1 for debugging on local machine
+    parser.add_argument("--sample_step", type=int, default=100)
     parser.add_argument("--model_save_step", type=int, default=1000)
-    parser.add_argument("--audio_step", type=int, default=75000)
+    parser.add_argument("--n_samples", type=int, default=8)
 
     config = parser.parse_args()
-    print(config)
-    print(hparams_debug_string())
+    # print(config)
+    # print(hparams_debug_string())
     print([torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())])
     main(config)

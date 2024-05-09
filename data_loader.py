@@ -110,7 +110,7 @@ class MyCollator(object):
                 self.min_len_seq, self.max_len_seq + 1,
             )
             left = np.random.randint(
-                0, len(full_melspec) - len_crop, size=2
+                0, len(full_melspec) - len_crop
             )
 
             cropped_melspec = full_melspec[left : left + len_crop, :]

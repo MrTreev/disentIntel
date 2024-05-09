@@ -16,6 +16,8 @@ from inferencer import Inferencer
 from librosa.sequence import dtw
 from shutil import copyfile
 from hparams import hparams, dataset_base_dir, out_dir
+global plslog
+plslog = False
 
 
 def create_UASpeech_custom_v2():
@@ -190,7 +192,7 @@ def inference():
 
     weights = hparams.weights
     spk_emb_dim = 14212
-    infer = Inferencer(weights)
+    infer = Inferencer(weights, True)
     _, dirs, _ = next(os.walk(hparams.uaspeech_custom_3_audio_dir))
 
     for dir in sorted(dirs):
@@ -211,7 +213,11 @@ def inference():
                     # inferece
                     print(file)
                     mspec, f0_norm = infer.load_sample(file_path, spk_emb_dim, gender)
+                    print(f"mspec: {mspec.shape}")
+                    print(f"f0_norm: {f0_norm.shape}")
                     mspec_pad, f0_norm_pad_onehot = infer.prepare_data(mspec, f0_norm)
+                    print(f"mspec_pad: {mspec_pad.size()}")
+                    print(f"f0_norm_pad_onehot: {f0_norm_pad_onehot.size()}")
                     inf_out = infer.inference(
                         mspec_pad, f0_norm_pad_onehot, spk_emb_dim
                     )

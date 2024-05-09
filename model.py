@@ -2,6 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+global plslog
+plslog = False
+
 
 class LinearNorm(torch.nn.Module):
     def __init__(self, in_dim, out_dim, bias=True, w_init_gain="linear"):
@@ -147,12 +150,18 @@ class Encoder_6(nn.Module):
         self.interp = InterpLnr(hparams)
 
     def forward(self, x):
+        global plslog
+        if plslog:
+            print("Encoder_6")
+            print(f"\tx in: {x.shape}")
         for conv in self.convolutions:
             x = F.relu(conv(x))
             x = x.transpose(1, 2)
             x = self.interp(x, self.len_org.expand(x.size(0)))
             x = x.transpose(1, 2)
         x = x.transpose(1, 2)
+        if plslog:
+            print(f"\tx mod: {x.shape}")
 
         self.lstm.flatten_parameters()
         outputs, _ = self.lstm(x)
@@ -166,6 +175,8 @@ class Encoder_6(nn.Module):
             ),
             dim=-1,
         )
+        if plslog:
+            print(f"\tcodes: {codes.shape}")
 
         return codes
 
@@ -234,13 +245,29 @@ class Encoder_7(nn.Module):
         self.interp = InterpLnr(hparams)
 
     def forward(self, x_f0):
+        global plslog
+        if plslog:
+            print("Encoder_7")
+            print(f"\tx_f0: {x_f0.shape}")
         x = x_f0[:, : self.dim_freq, :]
         f0 = x_f0[:, self.dim_freq :, :]
+        if plslog:
+            print(f"\tx: {x.shape}")
+            print(f"\tf0: {f0.shape}")
 
         for conv_1, conv_2 in zip(self.convolutions_1, self.convolutions_2):
             x = F.relu(conv_1(x))
+            if plslog:
+                print(f"\t\tx: {x.shape}")
             f0 = F.relu(conv_2(f0))
-            x_f0 = torch.cat((x, f0), dim=1).transpose(1, 2)
+            if plslog:
+                print(f"\t\tf0: {f0.shape}")
+            x_int = torch.cat((x, f0), dim=1)
+            if plslog:
+                print(f"\t\tx_int: {x_int.shape}")
+            x_f0 = x_int.transpose(1, 2)
+            if plslog:
+                print(f"\t\tx_f0: {x_f0.shape}")
             x_f0 = self.interp(x_f0, self.len_org.expand(x.size(0)))
             x_f0 = x_f0.transpose(1, 2)
             x = x_f0[:, : self.dim_enc, :]
@@ -348,6 +375,7 @@ class Generator_3(nn.Module):
         self.encoder_2 = Encoder_t(hparams)
         self.decoder = Decoder_3(hparams)
 
+        self.intelAssess = False
         self.freq = hparams.freq
         self.freq_2 = hparams.freq_2
         self.freq_3 = hparams.freq_3
@@ -374,7 +402,10 @@ class Generator_3(nn.Module):
 
         mel_outputs = self.decoder(encoder_outputs)
 
-        return mel_outputs  # , code_exp_1, code_exp_2, code_exp_3
+        if self.intelAssess:
+            return mel_outputs, code_exp_1, code_exp_2, code_exp_3
+        else:
+            return mel_outputs
 
     def rhythm(self, x_org):
         x_2 = x_org.transpose(2, 1)
@@ -434,11 +465,20 @@ class InterpLnr(nn.Module):
         return out_tensor
 
     def forward(self, x, len_seq):
+        global plslog
+        if plslog:
+            print("InterpLnr")
+            print(f"\tx: {x.shape}")
+            print(f"\tlen_seq: {len_seq.shape}")
         if not self.training:
             return x
 
         device = x.device
         batch_size = x.size(0)
+        if plslog:
+            print(f"batch_size: {batch_size}")
+            print(f"max_len_seg: {self.max_len_seg}")
+            print(f"max_num_seg: {self.max_num_seg}")
 
         # indices of each sub segment
         indices = (
@@ -446,12 +486,21 @@ class InterpLnr(nn.Module):
             .unsqueeze(0)
             .expand(batch_size * self.max_num_seg, -1)
         )
-        # scales of each sub segment
+        if plslog:
+            print(f"indices: {indices.shape}")
         scales = torch.rand(batch_size * self.max_num_seg, device=device) + 0.5
+        if plslog:
+            print(f"scales: {scales.shape}")
 
         idx_scaled = indices / scales.unsqueeze(-1)
+        if plslog:
+            print(f"idx_scaled: {idx_scaled.shape}")
         idx_scaled_fl = torch.floor(idx_scaled)
+        if plslog:
+            print(f"idx_scaled_fl: {idx_scaled_fl.shape}")
         lambda_ = idx_scaled - idx_scaled_fl
+        if plslog:
+            print(f"lambda_: {lambda_.shape}")
 
         len_seg = torch.randint(
             low=self.min_len_seg,
@@ -459,26 +508,44 @@ class InterpLnr(nn.Module):
             size=(batch_size * self.max_num_seg, 1),
             device=device,
         )
+        if plslog:
+            print(f"len_seg: {len_seg.shape}")
 
         # end point of each segment
         idx_mask = idx_scaled_fl < (len_seg - 1)
+        if plslog:
+            print(f"idx_mask: {idx_mask.shape}")
 
         offset = len_seg.view(batch_size, -1).cumsum(dim=-1)
+        if plslog:
+            print(f"offset_input: {offset.shape}")
         # offset starts from the 2nd segment
         offset = F.pad(offset[:, :-1], (1, 0), value=0).view(-1, 1)
+        if plslog:
+            print(f"offset: {offset.shape}")
 
         idx_scaled_org = idx_scaled_fl + offset
+        if plslog:
+            print(f"idx_scaled_org: {idx_scaled_org.shape}")
 
         len_seq_rp = torch.repeat_interleave(len_seq, self.max_num_seg)
+        if plslog:
+            print(f"len_seq_rp: {len_seq_rp.shape}")
         idx_mask_org = idx_scaled_org < (len_seq_rp - 1).unsqueeze(-1)
 
         idx_mask_final = idx_mask & idx_mask_org
+        if plslog:
+            print(f"idx_mask_final: {idx_mask_final.shape}")
 
         counts = idx_mask_final.sum(dim=-1).view(batch_size, -1).sum(dim=-1)
+        if plslog:
+            print(f"counts: {counts.shape}")
 
         index_1 = torch.repeat_interleave(
             torch.arange(batch_size, device=device), counts
         )
+        if plslog:
+            print(f"index_1: {index_1.shape}")
 
         index_2_fl = idx_scaled_org[idx_mask_final].long()
         index_2_cl = index_2_fl + 1
@@ -486,6 +553,8 @@ class InterpLnr(nn.Module):
         y_fl = x[index_1, index_2_fl, :]
         y_cl = x[index_1, index_2_cl, :]
         lambda_f = lambda_[idx_mask_final].unsqueeze(-1)
+        if plslog:
+            print(f"lambda_f: {lambda_f.shape}")
 
         y = (1 - lambda_f) * y_fl + lambda_f * y_cl
 
@@ -493,4 +562,6 @@ class InterpLnr(nn.Module):
 
         seq_padded = self.pad_sequences(sequences)
 
+        if plslog:
+            print(f"seq_padded: {seq_padded.shape}")
         return seq_padded

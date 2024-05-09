@@ -15,15 +15,18 @@ from utils import (
 )
 from model import Generator_3 as Generator
 from utils import pad_f0
+global plslog
+plslog = False
 
 
 class Inferencer(object):
-    def __init__(self, model_path):
+    def __init__(self, model_path, intelAssess: bool = False):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.hparams = hparams
         self.G_path = model_path
         self.G = self.load_models()
-        self.mel_basis = mel(16000, 1024, fmin=90, fmax=7600, n_mels=80).T
+        self.G.intelAssess = intelAssess
+        self.mel_basis = mel(sr=16000, n_fft=1024, fmin=90, fmax=7600, n_mels=80).T
         self.min_level = np.exp(-100 / 20 * np.log(10))
         self.b, self.a = butter_highpass(30, 1600, order=5)
 
@@ -55,9 +58,9 @@ class Inferencer(object):
     def inference(self, mspec_pad, f0_norm_pad_onehot, speaker_dim):
         uttr = mspec_pad.type(torch.float32).to(self.device)
         uttr_f0 = torch.cat((uttr, f0_norm_pad_onehot), dim=-1)
-        emb_empty = torch.from_numpy(np.zeros((1, speaker_dim), dtype=np.float32)).to(
-            self.device
-        )
+        emb_empty = torch.from_numpy(
+            np.zeros((1, speaker_dim), dtype=np.float32)
+        ).to(self.device)
         mel_out = self.G(uttr_f0, uttr, emb_empty)
         return mel_out
 
