@@ -106,7 +106,7 @@ if __name__ == "__main__":
     print(hparams_debug_string())
     print("GPUs:")
     [print(f"  {torch.cuda.get_device_name(i)}") for i in range(torch.cuda.device_count())]
-    if config.train_base:
+    if config.train_new:
         main(config)
     if config.intel_assess:
         intel(config)
