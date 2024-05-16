@@ -185,12 +185,12 @@ def cut_vad_single(c, nrg, file_path):
     soundfile.write(file_path, new_frames, samplerate=16000)
 
 
-def inference():
+def inference(config):
     """
     3) Inference with SpeechSplit to save 3 codes per utterance
     """
 
-    weights = hparams.weights
+    weights = config.trained_model
     spk_emb_dim = 14212
     infer = Inferencer(weights, True)
     _, dirs, _ = next(os.walk(hparams.uaspeech_custom_3_audio_dir))
@@ -200,6 +200,7 @@ def inference():
         _, _, files = next(
             os.walk(os.path.join(hparams.uaspeech_custom_3_audio_dir, dir))
         )
+        print(f"Processing: {dir}")
         for file in sorted(files):
             if ".wav" in file:
                 file_path = os.path.join(hparams.uaspeech_custom_3_audio_dir, dir, file)
@@ -211,13 +212,8 @@ def inference():
                 # if inference files do not already exist, create them
                 if not os.path.exists(meta_path):
                     # inferece
-                    print(file)
                     mspec, f0_norm = infer.load_sample(file_path, spk_emb_dim, gender)
-                    print(f"mspec: {mspec.shape}")
-                    print(f"f0_norm: {f0_norm.shape}")
                     mspec_pad, f0_norm_pad_onehot = infer.prepare_data(mspec, f0_norm)
-                    print(f"mspec_pad: {mspec_pad.size()}")
-                    print(f"f0_norm_pad_onehot: {f0_norm_pad_onehot.size()}")
                     inf_out = infer.inference(
                         mspec_pad, f0_norm_pad_onehot, spk_emb_dim
                     )
@@ -1042,14 +1038,13 @@ def plot_everything(plot_dir):
 if __name__ == "__main__":
     # ~ Correlation testing (perform functions below in the listed order)
     # 1) prepare a custom UASpeech corpus, that will be used in all the following steps
-    # create_UASpeech_custom_v2()
+    create_UASpeech_custom_v2()
     # 2) cut 15% of the audio durations at the beginning and end, then perform VAD
-    # cut_vad(0.15, 0.0)
+    cut_vad(0.15, 0.0)
     # 3) perform inference with the previously trained SpeechSplit model
     inference()
-    # 4) to test across the 4 available reference speaker pairs
-    #   manually create the 4 reference dir's and copy files from inference dir
-    #   in: control, reference, pathological dirs
+    # 4) to test across the 4 available reference speaker pairs manually create the 4 reference
+    #    dir's and copy files from inference dir in: control, reference, pathological dirs
     # 5) calculate all the required metrics
     dtw_diff_condense()
     # 6) scatter plot including regression line
