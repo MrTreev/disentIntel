@@ -132,7 +132,7 @@ class Solver(object):
         print("Current learning rates, g_lr: {}.".format(g_lr))
 
         # Print logs in specified order
-        keys = ["loss_mean", "loss_sum"]
+        keys = ["loss_mean"]
 
         # Start training.
         print("Start training...")
@@ -176,7 +176,6 @@ class Solver(object):
 
             x_identic = self.G(x_f0_intrp_org, x_real_org, emb_org)
             g_loss_id = torch.nn.functional.mse_loss(x_real_org, x_identic, reduction="mean")
-            g_loss_sum = torch.nn.functional.mse_loss(x_real_org, x_identic, reduction="sum")
 
             # Backward and optimize.
             g_loss = g_loss_id
@@ -187,7 +186,6 @@ class Solver(object):
             # Logging.
             loss = {}
             loss["loss_mean"] = g_loss_id.item()
-            loss["loss_sum"] = g_loss_sum.item()
 
             # =================================================== #
             # 4. Miscellaneous                                    #
@@ -234,7 +232,6 @@ class Solver(object):
         self.G = self.G.eval()
         with torch.no_grad():
             loss_mean = []
-            loss_sum = []
             for val_sub in validation_set:
                 emb_org_val = torch.from_numpy(val_sub[1]).to(self.device)
                 for k in range(2, 3):
@@ -256,14 +253,9 @@ class Solver(object):
                     g_loss_mean = torch.nn.functional.mse_loss(
                         x_real_pad, x_identic_val, reduction="mean"
                     )
-                    g_loss_sum = torch.nn.functional.mse_loss(
-                        x_real_pad, x_identic_val, reduction="sum"
-                    )
                     loss_mean.append(g_loss_mean.item())
-                    loss_sum.append(g_loss_sum.item())
             vloss = {}
             vloss["loss_mean"] = np.mean(loss_mean)
-            vloss["loss_sum"] = np.sum(loss_sum) / 10
             for tag, value in vloss.items():
                 print(red(f"{tag}/Validation: {value}"))
                 if self.use_tensorboard:

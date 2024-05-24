@@ -204,11 +204,11 @@ def get_loader(hparams) -> torch.utils.data.DataLoader:
         hparams.common_root_dir, hparams.common_feat_dir, hparams.mode
     )
     my_collator = MyCollator(hparams)
-    # sampler = MultiSampler(
-    #     len(dataset),
-    #     hparams.samplier,
-    #     shuffle=hparams.shuffle
-    # )
+    sampler = MultiSampler(
+        len(dataset) / hparams.dataset_div,
+        hparams.samplier,
+        shuffle=hparams.shuffle
+    )
     sampler = torch.utils.data.SequentialSampler(dataset)
     data_loader = torch.utils.data.DataLoader(
         dataset=dataset,

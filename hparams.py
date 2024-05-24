@@ -31,7 +31,7 @@ hparams = HParams(
     max_len_seg=32,
     min_len_seq=64,
     max_len_seq=128,
-    max_len_pad=1024,               # 192 (original), 672 (de), 576 (en)
+    max_len_pad=576,               # 192 (original), 672 (de), 576 (en)
                                     # has to be: % 32 == 0
     # data loader
     common_data_dir=f"{dataset_base_dir}/CommonSpeakerSplit",
@@ -49,6 +49,7 @@ hparams = HParams(
     shuffle=True,
     num_workers=0,
     samplier=8,
+    dataset_div=8,
 )
 
 

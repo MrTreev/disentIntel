@@ -87,8 +87,8 @@ if __name__ == "__main__":
 
     # Step size.
     parser.add_argument("--log_step", type=int, default=10)
-    parser.add_argument("--sample_step", type=int, default=1000)
-    parser.add_argument("--model_save_step", type=int, default=1000)
+    parser.add_argument("--sample_step", type=int, default=500)
+    parser.add_argument("--model_save_step", type=int, default=500)
     parser.add_argument("--n_samples", type=int, default=8)
 
     parser.add_argument("--train_new", action="store_true", default=False)
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     print(hparams_debug_string())
     print("GPUs:")
     [print(f"  {torch.cuda.get_device_name(i)}") for i in range(torch.cuda.device_count())]
-    if config.train_new:
+    if config.train_new or config.train_base:
         main(config)
     if config.intel_assess:
         intel(config)
